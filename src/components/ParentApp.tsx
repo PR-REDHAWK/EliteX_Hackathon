@@ -723,17 +723,32 @@ export const ParentApp: React.FC = () => {
                   </h4>
                   
                   <div className="space-y-3">
-                    <div className="glass rounded-xl p-3 border border-slate-900 flex justify-between items-center text-xs">
-                      <div>
-                        <h5 className="font-bold text-white">Siddharth Sen</h5>
-                        <span className="text-[9px] text-slate-400">Minecraft • Approved via OTP</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-emerald-400">₹299</span>
-                        <span className="text-[8px] text-slate-500 block mt-0.5">3h ago</span>
-                      </div>
-                    </div>
-
+                    {(() => {
+                      const recentTransactions = notifications.filter(n => n.type === 'success' || n.type === 'blocked');
+                      return recentTransactions.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                          No transactions logged
+                        </div>
+                      ) : (
+                        recentTransactions.map((notif) => {
+                          const isBlocked = notif.type === 'blocked';
+                          return (
+                            <div key={notif.id} className="glass rounded-xl p-3 border border-slate-900 flex justify-between items-center text-xs">
+                              <div className="max-w-[70%]">
+                                <h5 className="font-bold text-white truncate">{notif.title}</h5>
+                                <p className="text-[9px] text-slate-400 leading-tight mt-0.5">{notif.message}</p>
+                              </div>
+                              <div className="text-right shrink-0 ml-2">
+                                <span className={`font-bold ${isBlocked ? 'text-red-400' : 'text-emerald-400'}`}>
+                                  {isBlocked ? 'Blocked' : 'Approved'}
+                                </span>
+                                <span className="text-[8px] text-slate-550 block mt-0.5">{notif.time}</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
