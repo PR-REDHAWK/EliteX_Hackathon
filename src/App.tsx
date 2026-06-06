@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import DeviceSimulator from './components/DeviceSimulator';
 import ChildApp from './components/ChildApp';
 import ParentApp from './components/ParentApp';
 import { 
-  Shield, User, RefreshCw, Gamepad2, 
-  ShieldCheck, Sparkles, HelpCircle
+  Shield, User, RefreshCw, 
+  HelpCircle, Info
 } from 'lucide-react';
 import { SCENARIOS } from './scenarios';
 
 function WorkspaceManager() {
-  const { activeScenario, status, otp, setScenario, resetTransaction, stats } = useApp();
+  const { activeScenario, status, otp, setScenario, resetTransaction, isLoggedIn } = useApp();
   const [activeTab, setActiveTab] = useState<'kid' | 'parent'>('kid');
 
   const req = activeScenario.request;
@@ -21,18 +20,18 @@ function WorkspaceManager() {
       case 'idle':
         return {
           step: 'Step 1: Start Purchase',
-          desc: 'Click "Verify & Pay" on the Child Device to simulate Aarav triggering a game checkout.',
+          desc: 'Click "Authorize & Complete Checkout" on the store page to simulate Aarav triggering a purchase.',
         };
       case 'scanning':
         return {
           step: 'Step 2: Face Recognition',
-          desc: 'The AI camera feed is running facial triangulation. Wait for age classification.',
+          desc: 'The AI webcam feed is running facial triangulation. Wait for age classification model to estimate.',
         };
       case 'estimating':
       case 'analyzing':
         return {
-          step: 'Step 3: Uploading Signatures',
-          desc: 'Securing biometrics and calculating time, amount, and pattern risk indicators.',
+          step: 'Step 3: AI Processing',
+          desc: 'Uploading biometric record and calculating time, amount, and pattern risk indicators.',
         };
       case 'waiting_parent':
         return {
@@ -48,7 +47,7 @@ function WorkspaceManager() {
       case 'otp_entry':
         return {
           step: 'Step 6: OTP Authorization',
-          desc: 'A parent OTP has been generated. Enter this 6-digit passcode into the keypad.',
+          desc: 'A parent OTP has been generated. Enter this 6-digit passcode into the checkout keypad.',
         };
       case 'approved':
         return {
@@ -65,6 +64,12 @@ function WorkspaceManager() {
 
   // Guide texts for Parent Section
   const getParentGuide = () => {
+    if (!isLoggedIn) {
+      return {
+        step: 'SaaS Authentication',
+        desc: 'Parent account must be registered or logged in to access the SaaS panel. Tap "Autofill Mock Values" for demo credentials, then click "Register".',
+      };
+    }
     switch (status) {
       case 'idle':
       case 'scanning':
@@ -77,17 +82,13 @@ function WorkspaceManager() {
       case 'waiting_parent':
         return {
           step: '🚨 Push Alert Received',
-          desc: 'A new transaction requires authorization. Tap "Analyze" inside the notification card below.',
+          desc: 'A new transaction requires authorization. Tap "Analyze Order" inside the alert banner below.',
         };
       case 'biometrics':
-        return {
-          step: 'Biometrics Verification',
-          desc: 'Simulating FaceID/Fingerprint scan to authorize parent access to the risk console.',
-        };
       case 'parent_decision':
         return {
           step: 'AI Risk Diagnostics',
-          desc: 'Inspect the circular gauge and risk bars. Tap "Approve & OTP" or "Reject".',
+          desc: 'Inspect the circular gauge and risk bars. Tap "Approve" or "Decline Checkout".',
         };
       case 'otp_entry':
         return {
@@ -100,10 +101,10 @@ function WorkspaceManager() {
           desc: 'Microtransaction was approved via OTP verification. Log has been archived.',
         };
       case 'blocked':
-        return {
-          step: 'Capital Secured',
-          desc: `Declined ₹${req.purchaseAmount} charge. Savings metric has updated.`,
-        };
+          return {
+            step: 'Capital Secured',
+            desc: `Declined ₹${req.purchaseAmount} charge. Savings metric has updated.`,
+          };
     }
   };
 
@@ -187,125 +188,72 @@ function WorkspaceManager() {
       </header>
 
       {/* Main Workspace Frame */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 flex flex-col justify-center">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col justify-center">
         
-        {activeTab === 'kid' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start justify-center w-full">
           
-          /* KID SECTION WORKSPACE */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center justify-center max-w-5xl mx-auto w-full">
+          {/* Left Area: Desktop App Portals (9/12 width) */}
+          <div className="lg:col-span-9 w-full">
+            {activeTab === 'kid' ? <ChildApp /> : <ParentApp />}
+          </div>
+
+          {/* Right Area: Pitch HUD Simulator guide (3/12 width) */}
+          <div className="lg:col-span-3 space-y-5 lg:sticky lg:top-24">
             
-            {/* Left Column: Details & Instructions (Window Card) */}
-            <div className="lg:col-span-5 space-y-5">
-              <div className="glass rounded-3xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[#00B9F1]/5 rounded-full blur-2xl pointer-events-none" />
-                
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-900">
-                  <Gamepad2 className="w-5 h-5 text-sky-400" />
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                    Kid Workspace Panel
-                  </h2>
-                </div>
-
-                <div className="mt-4 space-y-3 text-xs">
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Minor Profile:</span>
-                    <span className="text-white font-bold">{req.childName}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Verified Age:</span>
-                    <span className="text-white font-bold">{req.childAge} Years</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">In-Game Store:</span>
-                    <span className="text-white font-bold">{req.gameName}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Item & Amount:</span>
-                    <span className="text-white font-bold">{req.itemName} (₹{req.purchaseAmount})</span>
-                  </div>
-                </div>
+            {/* Guide Info */}
+            <div className="glass rounded-3xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#00B9F1]/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-900 mb-4">
+                <Info className="w-4.5 h-4.5 text-[#00B9F1]" />
+                <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">
+                  Pitch Demo Helper
+                </h2>
               </div>
 
-              {/* Demo Helper guide */}
-              <div className="glass-paytm border border-[#00B9F1]/20 rounded-2xl p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs text-[#00B9F1] font-bold uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 animate-pulse" />
-                  <span>{kidGuide?.step}</span>
+              {activeTab === 'kid' ? (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Active Scenario Profile</span>
+                    <span className="text-xs font-bold text-white block">{req.childName} (Age {req.childAge})</span>
+                    <span className="text-[10px] text-slate-500 block">Game: {req.gameName}</span>
+                  </div>
+                  <div className="h-[1px] bg-slate-900" />
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-sky-400 font-bold uppercase tracking-wider block">{kidGuide?.step}</span>
+                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                      {kidGuide?.desc}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                  {kidGuide?.desc}
-                </p>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">AI Recommendation Metrics</span>
+                    <span className="text-xs font-bold text-white block">Suggest: {req.recommendation}</span>
+                    <span className="text-[10px] text-slate-500 block">AI Risk Score: {req.riskScore} / 100</span>
+                  </div>
+                  <div className="h-[1px] bg-slate-900" />
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">{parentGuide?.step}</span>
+                    <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                      {parentGuide?.desc}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Column: Simulator Viewport */}
-            <div className="lg:col-span-7 flex justify-center">
-              <DeviceSimulator title="Child App Simulator" theme="child" currentTime="11:42 PM">
-                <ChildApp />
-              </DeviceSimulator>
+            {/* Quick Tips */}
+            <div className="glass-paytm border border-[#00B9F1]/10 rounded-2xl p-4 text-[10px] text-slate-450 space-y-1 leading-normal font-medium">
+              <span className="text-white font-bold block mb-1">💡 Sandbox Tips</span>
+              <p>Change scenarios using pills in top-right.</p>
+              <p>Reset variables anytime via the circular arrow icon.</p>
             </div>
 
           </div>
-        ) : (
-          
-          /* PARENT DASHBOARD WORKSPACE */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center justify-center max-w-5xl mx-auto w-full">
-            
-            {/* Left Column: Details & Instructions (Window Card) */}
-            <div className="lg:col-span-5 space-y-5">
-              <div className="glass rounded-3xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-                
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-900">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                  <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                    Parent Dashboard Monitor
-                  </h2>
-                </div>
 
-                <div className="mt-4 space-y-3.5 text-xs">
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Money Protected:</span>
-                    <span className="text-emerald-400 font-extrabold">₹{stats.moneyProtected}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">AI Recommendations:</span>
-                    <span className={`font-bold ${req.riskLevel === 'High' ? 'text-red-400' : req.riskLevel === 'Medium' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {req.recommendation} (Score: {req.riskScore})
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Active Scenario ID:</span>
-                    <span className="text-white font-bold">Scenario {activeScenario.id}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-900/50 pb-2">
-                    <span className="text-slate-400 font-medium">Review Decisions:</span>
-                    <span className="text-white font-bold">{stats.purchasesReviewed} items logged</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Demo Helper guide */}
-              <div className="glass-paytm border border-[#00B9F1]/20 rounded-2xl p-4 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs text-[#00B9F1] font-bold uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 animate-pulse" />
-                  <span>{parentGuide?.step}</span>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                  {parentGuide?.desc}
-                </p>
-              </div>
-            </div>
-
-            {/* Right Column: Simulator Viewport */}
-            <div className="lg:col-span-7 flex justify-center">
-              <DeviceSimulator title="Parent Dashboard Simulator" theme="parent" currentTime="11:42 PM">
-                <ParentApp />
-              </DeviceSimulator>
-            </div>
-
-          </div>
-        )}
+        </div>
 
       </main>
 
