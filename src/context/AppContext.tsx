@@ -153,11 +153,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [otpError, setOtpError] = useState<string>('');
   
   // Parental Auth State
-  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [isRegistered, setIsRegistered] = useState<boolean>(() => {
+    return localStorage.getItem('parentIsRegistered') === 'true';
+  });
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [parentUsername, setParentUsername] = useState<string>('');
-  const [parentEmail, setParentEmail] = useState<string>('');
-  const [parentCredentials, setParentCredentials] = useState<{ username: string; email: string; psw: string } | null>(null);
+  const [parentUsername, setParentUsername] = useState<string>(() => {
+    return localStorage.getItem('parentUsername') || '';
+  });
+  const [parentEmail, setParentEmail] = useState<string>(() => {
+    return localStorage.getItem('parentEmail') || '';
+  });
+  const [parentCredentials, setParentCredentials] = useState<{ username: string; email: string; psw: string } | null>(() => {
+    const saved = localStorage.getItem('parentCredentials');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [isFaceVerified, setIsFaceVerified] = useState<boolean>(false);
 
   // Starting Mock stats
@@ -178,14 +187,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       time: '2 hours ago',
       read: true,
     },
-    {
-      id: 'notif_2',
-      type: 'blocked',
-      title: 'High Risk Attempt Blocked',
-      message: '₹2,500 purchase for Free Fire Diamonds was blocked.',
-      time: 'Yesterday',
-      read: true,
-    },
   ]);
 
   // Handle changing scenarios (deep copy baseline values)
@@ -199,11 +200,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Auth Operations
   const registerParent = (username: string, email: string, psw: string) => {
+    const creds = { username, email, psw };
     setParentUsername(username);
     setParentEmail(email);
-    setParentCredentials({ username, email, psw });
+    setParentCredentials(creds);
     setIsRegistered(true);
     setIsLoggedIn(true);
+
+    localStorage.setItem('parentIsRegistered', 'true');
+    localStorage.setItem('parentUsername', username);
+    localStorage.setItem('parentEmail', email);
+    localStorage.setItem('parentCredentials', JSON.stringify(creds));
 
     addNotification(
       'info',

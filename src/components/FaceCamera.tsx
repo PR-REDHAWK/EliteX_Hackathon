@@ -92,6 +92,8 @@ export const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, isActive, mod
     };
   }, [isActive]);
 
+  const lastDetectionTimeRef = useRef<number>(0);
+
   // Run the detection loop when video plays
   useEffect(() => {
     if (loading || !isActive || !stream || !videoRef.current) return;
@@ -110,6 +112,14 @@ export const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, isActive, mod
         return;
       }
 
+      // Throttle detection to run every 150ms for performance
+      const now = Date.now();
+      if (now - lastDetectionTimeRef.current < 150) {
+        requestRef.current = requestAnimationFrame(runDetection);
+        return;
+      }
+      lastDetectionTimeRef.current = now;
+
       // Match canvas dimensions to video
       if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
         canvas.width = video.videoWidth;
@@ -120,10 +130,10 @@ export const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, isActive, mod
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Detect all faces in video frame with landmarks and descriptors
+        // Detect all faces with optimized parameters
         const options = new faceapi.TinyFaceDetectorOptions({
-          inputSize: 224,
-          scoreThreshold: 0.5,
+          inputSize: 320, // Increased size for better distance/angle accuracy
+          scoreThreshold: 0.35, // Lowered threshold for reliable detection in low light
         });
 
         try {
@@ -134,14 +144,18 @@ export const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, isActive, mod
 
           if (!isRunning) return;
 
+          const neededFrames = 8; // Reduced frames (~1.2 seconds of stable scanning)
+
           if (detections.length === 0) {
             setFaceStatus('no_face');
-            stableCounterRef.current = 0;
-            setProgress(0);
+            // Graceful decay: decrement instead of hard resetting to 0
+            stableCounterRef.current = Math.max(0, stableCounterRef.current - 1);
+            setProgress(Math.floor((stableCounterRef.current / neededFrames) * 100));
           } else if (detections.length > 1) {
             setFaceStatus('multiple_faces');
-            stableCounterRef.current = 0;
-            setProgress(0);
+            // Graceful decay
+            stableCounterRef.current = Math.max(0, stableCounterRef.current - 1);
+            setProgress(Math.floor((stableCounterRef.current / neededFrames) * 100));
           } else {
             // Exactly one face detected
             const detection = detections[0];
@@ -184,9 +198,8 @@ export const FaceCamera: React.FC<FaceCameraProps> = ({ onCapture, isActive, mod
             ctx.strokeRect(box.x, box.y, box.width, box.height);
             ctx.shadowBlur = 0; // reset
 
-            // Progress tracking (requires holding still for ~1.5s)
+            // Progress tracking
             stableCounterRef.current += 1;
-            const neededFrames = 30; // Approx 1 second at 30fps
             const percent = Math.min(100, Math.floor((stableCounterRef.current / neededFrames) * 100));
             setProgress(percent);
 

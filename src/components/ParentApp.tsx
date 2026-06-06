@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, BarChart3, Bell, ChevronRight, 
@@ -19,6 +19,7 @@ export const ParentApp: React.FC = () => {
     otp,
     notifications,
     stats,
+    isRegistered,
     isLoggedIn,
     parentUsername,
     parentEmail,
@@ -38,13 +39,19 @@ export const ParentApp: React.FC = () => {
   const [isRegisteringInSettings, setIsRegisteringInSettings] = useState(false);
   
   // Auth Form State
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>(isRegistered ? 'login' : 'signup');
   const [usernameInput, setUsernameInput] = useState('vikram99');
   const [emailInput, setEmailInput] = useState('parent@secureplay.com');
   const [pswInput, setPswInput] = useState('parent123');
   const [confirmPswInput, setConfirmPswInput] = useState('parent123');
   const [loginInput, setLoginInput] = useState('vikram99');
   const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    if (isRegistered) {
+      setAuthMode('login');
+    }
+  }, [isRegistered]);
 
   const req = activeScenario.request;
 
@@ -727,16 +734,6 @@ export const ParentApp: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="glass rounded-xl p-3 border border-slate-900 flex justify-between items-center text-xs">
-                      <div>
-                        <h5 className="font-bold text-white">Riya Verma</h5>
-                        <span className="text-[9px] text-slate-400">Free Fire • Blocked (High Risk)</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-red-400">₹2,500</span>
-                        <span className="text-[8px] text-slate-500 block mt-0.5">Yesterday</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
