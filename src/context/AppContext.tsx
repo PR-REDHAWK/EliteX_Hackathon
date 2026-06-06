@@ -13,12 +13,13 @@ interface AppContextType {
   isLoggedIn: boolean;
   parentUsername: string;
   parentEmail: string;
+  isFaceVerified: boolean;
+  setFaceVerified: (verified: boolean) => void;
   registerParent: (username: string, email: string, psw: string) => void;
   loginParent: (usernameOrEmail: string, psw: string) => boolean;
   logoutParent: () => void;
   setScenario: (id: 'A' | 'B' | 'C') => void;
   startTransaction: () => void;
-  completeFaceScan: () => void;
   triggerBiometrics: () => void;
   approveTransaction: () => void;
   rejectTransaction: () => void;
@@ -157,6 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [parentUsername, setParentUsername] = useState<string>('');
   const [parentEmail, setParentEmail] = useState<string>('');
   const [parentCredentials, setParentCredentials] = useState<{ username: string; email: string; psw: string } | null>(null);
+  const [isFaceVerified, setIsFaceVerified] = useState<boolean>(false);
 
   // Starting Mock stats
   const [stats, setStats] = useState<AppStats>({
@@ -225,17 +227,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logoutParent = () => {
     setIsLoggedIn(false);
+    setIsFaceVerified(false);
+  };
+
+  const setFaceVerified = (verified: boolean) => {
+    setIsFaceVerified(verified);
   };
 
   // State transitions
   const startTransaction = () => {
-    setStatus('scanning');
+    setStatus('estimating');
     setOtp('');
     setOtpError('');
-  };
-
-  const completeFaceScan = () => {
-    setStatus('estimating');
     
     // Simulate age estimation delay
     setTimeout(() => {
@@ -386,12 +389,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLoggedIn,
         parentUsername,
         parentEmail,
+        isFaceVerified,
+        setFaceVerified,
         registerParent,
         loginParent,
         logoutParent,
         setScenario,
         startTransaction,
-        completeFaceScan,
         triggerBiometrics,
         approveTransaction,
         rejectTransaction,

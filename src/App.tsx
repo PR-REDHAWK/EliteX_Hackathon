@@ -9,7 +9,7 @@ import {
 import { SCENARIOS } from './scenarios';
 
 function WorkspaceManager() {
-  const { activeScenario, status, otp, setScenario, resetTransaction, isLoggedIn } = useApp();
+  const { activeScenario, status, otp, setScenario, resetTransaction, isLoggedIn, isFaceVerified } = useApp();
   const [activeTab, setActiveTab] = useState<'kid' | 'parent'>('kid');
 
   const req = activeScenario.request;
@@ -22,31 +22,25 @@ function WorkspaceManager() {
           step: 'Step 1: Start Purchase',
           desc: 'Click "Authorize & Complete Checkout" on the store page to simulate Aarav triggering a purchase.',
         };
-      case 'scanning':
-        return {
-          step: 'Step 2: Face Recognition',
-          desc: 'The AI webcam feed is running facial triangulation. Wait for age classification model to estimate.',
-        };
       case 'estimating':
       case 'analyzing':
         return {
-          step: 'Step 3: AI Processing',
-          desc: 'Uploading biometric record and calculating time, amount, and pattern risk indicators.',
+          step: 'Step 2: AI Processing',
+          desc: 'Calculating time, amount, and pattern risk indicators via live Gemini AI Risk analysis.',
         };
       case 'waiting_parent':
         return {
-          step: 'Step 4: Pending Approval',
+          step: 'Step 3: Pending Approval',
           desc: 'Request sent to parent. Click "Parent Dashboard" in the top navbar to review the alert.',
         };
-      case 'biometrics':
       case 'parent_decision':
         return {
-          step: 'Step 5: Parent Reviewing',
+          step: 'Step 4: Parent Reviewing',
           desc: 'The parent is analyzing the AI Risk Assessment report on their dashboard.',
         };
       case 'otp_entry':
         return {
-          step: 'Step 6: OTP Authorization',
+          step: 'Step 5: OTP Authorization',
           desc: 'A parent OTP has been generated. Enter this 6-digit passcode into the checkout keypad.',
         };
       case 'approved':
@@ -70,9 +64,14 @@ function WorkspaceManager() {
         desc: 'Parent account must be registered or logged in to access the SaaS panel. Tap "Autofill Mock Values" for demo credentials, then click "Register".',
       };
     }
+    if (!isFaceVerified) {
+      return {
+        step: 'Face ID Verification',
+        desc: 'Authenticate access by scanning your face using your device camera. Align your face and hold still for 1.5 seconds.',
+      };
+    }
     switch (status) {
       case 'idle':
-      case 'scanning':
       case 'estimating':
       case 'analyzing':
         return {
@@ -84,7 +83,6 @@ function WorkspaceManager() {
           step: '🚨 Push Alert Received',
           desc: 'A new transaction requires authorization. Tap "Analyze Order" inside the alert banner below.',
         };
-      case 'biometrics':
       case 'parent_decision':
         return {
           step: 'AI Risk Diagnostics',

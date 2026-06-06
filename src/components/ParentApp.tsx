@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, BarChart3, Bell, ChevronRight, 
   Sparkles, Shield, X, ShieldAlert, ArrowRight, 
-  Trash2, ShieldCheck, Clock, Activity, LogOut, Lock, Mail, User as UserIcon
+  Trash2, ShieldCheck, Clock, Activity, LogOut, Lock, Mail, User as UserIcon,
+  Settings, RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import RiskGauge from './RiskGauge';
 import AnalyticsCharts from './AnalyticsCharts';
+import FaceVerification from './FaceVerification';
+import FaceRegistration from './FaceRegistration';
 
 export const ParentApp: React.FC = () => {
   const {
@@ -18,6 +21,9 @@ export const ParentApp: React.FC = () => {
     stats,
     isLoggedIn,
     parentUsername,
+    parentEmail,
+    isFaceVerified,
+    setFaceVerified,
     registerParent,
     loginParent,
     logoutParent,
@@ -28,7 +34,8 @@ export const ParentApp: React.FC = () => {
     clearNotifications,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'notifications'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'notifications' | 'settings'>('home');
+  const [isRegisteringInSettings, setIsRegisteringInSettings] = useState(false);
   
   // Auth Form State
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
@@ -354,7 +361,19 @@ export const ParentApp: React.FC = () => {
     );
   }
 
-  // RENDER MAIN DASHBOARD IF LOGGED IN
+  // RENDER FACE VERIFICATION LOCK SCREEN IF LOGGED IN BUT NOT FACE-VERIFIED
+  if (!isFaceVerified) {
+    return (
+      <div className="w-full min-h-[550px] glass rounded-3xl border border-slate-800 flex items-center justify-center shadow-2xl bg-slate-950/20 p-6">
+        <FaceVerification
+          onSuccess={() => setFaceVerified(true)}
+          onLogout={logoutParent}
+        />
+      </div>
+    );
+  }
+
+  // RENDER MAIN DASHBOARD IF LOGGED IN AND FACE-VERIFIED
   return (
     <div className="w-full min-h-[550px] glass rounded-3xl border border-slate-800 flex overflow-hidden shadow-2xl relative">
       
@@ -403,6 +422,18 @@ export const ParentApp: React.FC = () => {
                 )}
                 <Bell className="w-4 h-4" />
                 <span>Alert Logs</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'settings'
+                    ? 'bg-[#00B9F1]/10 text-[#00B9F1] border border-[#00B9F1]/15'
+                    : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Settings & Security</span>
               </button>
             </nav>
           </div>
@@ -787,6 +818,109 @@ export const ParentApp: React.FC = () => {
                   ))
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {/* MAIN TABS: SETTINGS & SECURITY */}
+          {status !== 'parent_decision' && status !== 'otp_entry' && activeTab === 'settings' && (
+            <motion.div
+              key="settings_tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Settings & Hardware Security</h3>
+              </div>
+
+              {!isRegisteringInSettings ? (
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+                  {/* Left Column: Security Status Card (7/12 width) */}
+                  <div className="md:col-span-7 glass border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-lg space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">Parental Biometric Lock</span>
+                        {localStorage.getItem('parentFaceDescriptor') ? (
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[9px] font-extrabold uppercase tracking-widest">
+                            Enrolled & Active
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-[9px] font-extrabold uppercase tracking-widest">
+                            Not Enrolled
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-slate-355 leading-relaxed font-semibold">
+                        SecurePlay enforces hardware-level Face ID verification using your device camera. The dashboard remains fully locked after email login until a live face scan matches your registered template (Euclidean threshold &lt; 0.6).
+                      </p>
+
+                      <div className="h-[1px] bg-slate-900/60" />
+
+                      <div className="space-y-2.5 text-xs">
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>Verification Model</span>
+                          <span className="text-white font-bold">tiny_face_detector_model</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>Resolution Parameters</span>
+                          <span className="text-white font-bold">640x480 user-facing webcam</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>Similarity Distance Limit</span>
+                          <span className="text-[#00B9F1] font-bold">&lt; 0.600 threshold</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setIsRegisteringInSettings(true)}
+                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 to-[#00B9F1] hover:to-sky-500 font-extrabold text-white text-xs tracking-widest uppercase shadow-[0_4px_20px_rgba(0,185,241,0.25)] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4 animate-spin-slow" />
+                      <span>{localStorage.getItem('parentFaceDescriptor') ? 'Re-register Face ID' : 'Enroll Face ID'}</span>
+                    </button>
+                  </div>
+
+                  {/* Right Column: Account Management (5/12 width) */}
+                  <div className="md:col-span-5 glass rounded-3xl p-6 border border-slate-800 shadow-lg space-y-4">
+                    <h4 className="text-[9px] font-extrabold text-slate-450 uppercase tracking-widest">
+                      Registered Credentials
+                    </h4>
+                    
+                    <div className="space-y-3.5 text-xs">
+                      <div>
+                        <span className="text-[8px] text-slate-500 uppercase font-bold block mb-0.5">Username</span>
+                        <span className="text-white font-semibold block bg-slate-900 border border-slate-900/50 rounded-lg p-2">{parentUsername}</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-slate-500 uppercase font-bold block mb-0.5">Email Address</span>
+                        <span className="text-white font-semibold block bg-slate-900 border border-slate-900/50 rounded-lg p-2">{parentEmail}</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-slate-500 uppercase font-bold block mb-0.5">Protected Sandbox Capital</span>
+                        <span className="text-emerald-400 font-extrabold block bg-slate-900 border border-slate-900/50 rounded-lg p-2">₹{stats.moneyProtected}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 max-w-lg mx-auto">
+                  <FaceRegistration 
+                    onComplete={() => {
+                      setIsRegisteringInSettings(false);
+                      setFaceVerified(true);
+                    }} 
+                  />
+                  <button
+                    onClick={() => setIsRegisteringInSettings(false)}
+                    className="w-full py-2.5 rounded-xl border border-slate-850 hover:bg-slate-900 text-xs font-bold text-slate-450 hover:text-slate-200 transition-colors cursor-pointer"
+                  >
+                    Back to Settings
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gamepad2, Shield, ArrowRight, ShieldCheck, ShieldX, KeyRound, Loader2, ShoppingBag, Lock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import FaceScanner from './FaceScanner';
 
 export const ChildApp: React.FC = () => {
   const {
@@ -12,7 +11,6 @@ export const ChildApp: React.FC = () => {
     parentUsername,
     isRegistered,
     startTransaction,
-    completeFaceScan,
     verifyOtp,
     resetTransaction,
   } = useApp();
@@ -221,22 +219,6 @@ export const ChildApp: React.FC = () => {
           </motion.div>
         )}
 
-        {/* SCANNING SCREEN: webcam container */}
-        {status === 'scanning' && (
-          <motion.div
-            key="scanning"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col justify-between min-h-[450px]"
-          >
-            <FaceScanner
-              targetAge={req.childAge}
-              childName={req.childName}
-              onComplete={completeFaceScan}
-            />
-          </motion.div>
-        )}
 
         {/* ESTIMATING & ANALYZING SCREEN: Desktop AI HUD */}
         {(status === 'estimating' || status === 'analyzing') && (
