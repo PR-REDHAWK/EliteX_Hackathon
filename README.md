@@ -198,3 +198,7 @@ By enabling families to make informed decisions before purchases occur, SecurePl
 
 This project is developed for educational, innovation, and hackathon purposes.
 
+## Contributors
+
+- Pritam Raj, Priyanshu Panwar 
+
